@@ -2,46 +2,40 @@ package nexus
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 )
 
-type ServerConfig interface {
-	setEndpoint()
-	setEndpoints()
-	GetEndpoints()
-	EndpointIsPublic()
-}
-
 type ServerStruct struct {
-	Debug          bool
-	Port           string
-	Middlewares    []func(next http.Handler) http.Handler
-	Endpoints      [][]EndpointPath
-	EndpointsPaths map[string]EndpointPath
-}
-
-type SrvCfgStruct struct {
-	Debug     bool
-	Endpoints map[string]EndpointPath
+	RunningServerMessage string
+	Secret               string
+	Debug                bool
+	Port                 string
+	Middlewares          []func(next http.Handler) http.Handler
+	Endpoints            [][]EndpointPath
+	EndpointsPaths       map[string]EndpointPath
 }
 
 type EndpointPath struct {
-	Path        string
-	HandlerFunc http.HandlerFunc
-	Handler     http.Handler
-	IsPublic    bool
+	Path                     string
+	HandlerFunc              http.HandlerFunc
+	Handler                  http.Handler
+	IsPublic                 bool
+	NoRequiresAuthentication bool
 }
 
-var Server ServerStruct = ServerStruct{
-	EndpointsPaths: make(map[string]EndpointPath),
-}
+var Server ServerStruct = ServerStruct{}
 
-func (server *ServerStruct) Create(serverSettings ServerStruct) *http.Server {
+func (server *ServerStruct) Create(serverSettings *ServerStruct) {
 
+	server.RunningServerMessage = serverSettings.RunningServerMessage
+	server.Secret = serverSettings.Secret
 	server.Port = serverSettings.Port
 	server.Debug = serverSettings.Debug
 	server.Endpoints = serverSettings.Endpoints
+	server.EndpointsPaths = make(map[string]EndpointPath)
+	server.Middlewares = serverSettings.Middlewares
 
 	mux := http.NewServeMux()
 
@@ -73,7 +67,7 @@ func (server *ServerStruct) Create(serverSettings ServerStruct) *http.Server {
 		port = "8080"
 	}
 
-	return &http.Server{
+	httpServer := &http.Server{
 		Addr: fmt.Sprintf(":%s", port),
 		Handler: ApplyMiddlewares(
 			mux,
@@ -81,6 +75,15 @@ func (server *ServerStruct) Create(serverSettings ServerStruct) *http.Server {
 		),
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
+	}
+
+	if server.RunningServerMessage == "" {
+		server.RunningServerMessage = fmt.Sprintf("Server running on port %s\n", httpServer.Addr)
+	}
+
+	fmt.Printf(server.RunningServerMessage)
+	if err := httpServer.ListenAndServe(); err != nil {
+		log.Fatal(err)
 	}
 }
 
@@ -128,7 +131,7 @@ func Health(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("OK"))
 }
 
-func GetAllRoutes(w http.ResponseWriter, r *http.Request) {
+func RoutesList(w http.ResponseWriter, r *http.Request) {
 	var routes map[string]string = make(map[string]string)
 	endpoints := Server.GetEndpoints()
 
@@ -146,5 +149,5 @@ func GetAllRoutes(w http.ResponseWriter, r *http.Request) {
 
 var ServerEndpoints = []EndpointPath{
 	{Path: "GET /_health", HandlerFunc: Health, IsPublic: true},
-	{Path: "GET /_routes", HandlerFunc: GetAllRoutes, IsPublic: true},
+	{Path: "GET /_routes", HandlerFunc: RoutesList, IsPublic: true},
 }
