@@ -1,22 +1,36 @@
 package nexus
 
 import (
+	"fmt"
 	"net/http"
 )
 
-func ApplyMiddlewares(mux http.Handler, middlewares []func(next http.Handler) http.Handler) http.Handler {
-	if Server.Secret != "" {
-		mux = ValidateSecret(mux)
+func (server *ServerStruct) ApplyMiddlewares(mux http.Handler) http.Handler {
+	fmt.Println("ApplyMiddlewares", server.ServerName, server.Debug)
+	if server.Debug {
+		mux = server.LogRequest(mux)
 	}
-	for i := len(middlewares) - 1; i >= 0; i-- {
-		mux = middlewares[i](mux)
+
+	if server.Secret != "" {
+		mux = server.ValidateSecret(mux)
+	}
+	for i := len(server.Middlewares) - 1; i >= 0; i-- {
+		mux = server.Middlewares[i](mux, server)
 	}
 	return mux
 }
 
-func ValidateSecret(next http.Handler) http.Handler {
+func (server *ServerStruct) LogRequest(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ok := Server.EndpointIsPublic(r)
+		fmt.Printf("[%s] %s %s\n", server.ServerName, r.Method, r.URL.Path)
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (server *ServerStruct) ValidateSecret(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		ok := server.EndpointIsPublic(r)
 
 		if ok {
 			next.ServeHTTP(w, r)
@@ -28,8 +42,8 @@ func ValidateSecret(next http.Handler) http.Handler {
 		*/
 		secret := r.Header.Get("x-secret")
 
-		if secret == "" || secret != Server.Secret {
-			http.Error(w, "Unauthorized: Invalid Secret", http.StatusUnauthorized)
+		if secret == "" || secret != server.Secret {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
 

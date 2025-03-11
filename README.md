@@ -8,6 +8,8 @@
 go get github.com/codecraftkit/nexus
 ```
 
+### Stand Alone
+
 ```go
 package main
 
@@ -25,7 +27,7 @@ func main() {
 		//Secret:      os.Getenv("SECRET"),
 		Port:        os.Getenv("PORT"),
 		Debug:       true,
-		Middlewares: []func(next http.Handler) http.Handler{
+		Middlewares: []func(next http.Handler, server *nexus.ServerStruct) http.Handler{
 			//VerifySession,
 		},
 		Endpoints: [][]nexus.EndpointPath{
@@ -34,7 +36,7 @@ func main() {
 		},
 	}
 
-	nexus.Server.Create(server)
+	server.Create()
 
 }
 
