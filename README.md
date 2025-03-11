@@ -1,5 +1,7 @@
 # nexus
 
+**Nexus** is a Go library designed to simplify the creation of HTTP servers by leveraging Go's standard library. It provides developers with a streamlined interface to set up robust and efficient web servers without relying on external frameworks. By utilizing Go's native capabilities, Nexus ensures optimal performance and seamless integration within the Go ecosystem.
+
 ## Install
 
 ```bash
