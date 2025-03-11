@@ -29,7 +29,7 @@ func ValidateSecret(next http.Handler) http.Handler {
 		secret := r.Header.Get("x-secret")
 
 		if secret == "" || secret != Server.Secret {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			http.Error(w, "Unauthorized: Invalid Secret", http.StatusUnauthorized)
 			return
 		}
 

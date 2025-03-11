@@ -1,5 +1,11 @@
 # nexus
 
+## Install
+
+```bash
+go get github.com/codecraftkit/nexus
+```
+
 ```go
 package main
 
