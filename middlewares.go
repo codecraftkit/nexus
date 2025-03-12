@@ -5,29 +5,38 @@ import (
 	"net/http"
 )
 
-func (server *ServerStruct) ApplyMiddlewares(mux http.Handler) http.Handler {
-	fmt.Println("ApplyMiddlewares", server.ServerName, server.Debug)
+// ApplyMiddlewares apply all middlewares to the mux;
+// if the server is in debug mode, the server will be register the LogRequest middleware that will log the request on the console
+// if the server has a secret, the server will be register the ValidateSecret middleware that will check if the request has a secret
+func (server *Server) ApplyMiddlewares(mux http.Handler) http.Handler {
+
+	// If the server is in debug mode, the server will be register the LogRequest middleware that will log the request on the console
 	if server.Debug {
 		mux = server.LogRequest(mux)
 	}
 
+	// If the server has a secret, the server will be register the ValidateSecret middleware that will check if the request has a secret
 	if server.Secret != "" {
 		mux = server.ValidateSecret(mux)
 	}
+	// Apply all middlewares
 	for i := len(server.Middlewares) - 1; i >= 0; i-- {
 		mux = server.Middlewares[i](mux, server)
 	}
+
 	return mux
 }
 
-func (server *ServerStruct) LogRequest(next http.Handler) http.Handler {
+// LogRequest log the request on the console
+func (server *Server) LogRequest(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("[%s] %s %s\n", server.ServerName, r.Method, r.URL.Path)
 		next.ServeHTTP(w, r)
 	})
 }
 
-func (server *ServerStruct) ValidateSecret(next http.Handler) http.Handler {
+// ValidateSecret check if the request has a secret
+func (server *Server) ValidateSecret(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		ok := server.EndpointIsPublic(r)
@@ -37,11 +46,11 @@ func (server *ServerStruct) ValidateSecret(next http.Handler) http.Handler {
 			return
 		}
 
-		/**
-		Evaluar secret
-		*/
+		// Evaluate secret
 		secret := r.Header.Get("x-secret")
 
+		// If the secret is empty or not equal to the server's secret, the request is unauthorized (Status 401)
+		// TODO: optimize this check
 		if secret == "" || secret != server.Secret {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return

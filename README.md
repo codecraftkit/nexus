@@ -23,14 +23,14 @@ import (
 func main() {
 	config.LoadEnv()
 
-	server := &nexus.ServerStruct{
+	server := &nexus.Server{
 		//Secret:      os.Getenv("SECRET"),
 		Port:        os.Getenv("PORT"),
 		Debug:       true,
-		Middlewares: []func(next http.Handler, server *nexus.ServerStruct) http.Handler{
+		Middlewares: []func(next http.Handler, server *nexus.Server) http.Handler{
 			//VerifySession,
 		},
-		Endpoints: [][]nexus.EndpointPath{
+		Endpoints: [][]nexus.Endpoint{
 			HomeEndpoints,
 			UserEndpoints,
 		},
@@ -70,11 +70,11 @@ func UsersSave(w http.ResponseWriter, r *http.Request) {
 
 }
 
-var HomeEndpoints = []nexus.EndpointPath{
+var HomeEndpoints = []nexus.Endpoint{
 	{Path: "GET /home", HandlerFunc: Home},
 }
 
-var UserEndpoints = []nexus.EndpointPath{
+var UserEndpoints = []nexus.Endpoint{
 	{Path: "GET /users", HandlerFunc: Users},
 	{Path: "POST /users", HandlerFunc: UsersSave},
 }
@@ -108,20 +108,35 @@ import (
 func main() {
 	config.LoadEnv()
 
-	server := &nexus.ServerStruct{
+	server1 := &nexus.Server{
 		//Secret: os.Getenv("SECRET"),
-		Port:        os.Getenv("PORT"),
+		Port:        "8081", //os.Getenv("PORT"),
 		Debug:       true,
-		Middlewares: []func(next http.Handler, server *nexus.ServerStruct) http.Handler{
+		Middlewares: []func(next http.Handler, server *nexus.Server) http.Handler{
 			//VerifySession,
 		},
-		Endpoints: [][]nexus.EndpointPath{
+		Endpoints: [][]nexus.Endpoint{
 			HomeEndpoints,
 			UserEndpoints,
 		},
 	}
 
-	server.Create()
+	server2 := &nexus.Server{
+		Port:  "8082",
+		Debug: true,
+		Endpoints: [][]nexus.Endpoint{
+			[]nexus.Endpoint{
+				{
+					Path: "GET /",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
+						w.Write([]byte("Server 2"))
+					},
+				},
+			},
+		},
+	}
+
+	nexus.Serve([]*nexus.Server{server1, server2})
 
 }
 
@@ -155,16 +170,16 @@ func UsersSave(w http.ResponseWriter, r *http.Request) {
 
 }
 
-var HomeEndpoints = []nexus.EndpointPath{
+var HomeEndpoints = []nexus.Endpoint{
 	{Path: "GET /home", HandlerFunc: Home},
 }
 
-var UserEndpoints = []nexus.EndpointPath{
+var UserEndpoints = []nexus.Endpoint{
 	{Path: "GET /users", HandlerFunc: Users},
 	{Path: "POST /users", HandlerFunc: UsersSave},
 }
 
-func VerifySession(next http.Handler, server *nexus.ServerStruct) http.Handler {
+func VerifySession(next http.Handler, server *nexus.Server) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		session := r.Header.Get("x-session")
