@@ -86,7 +86,7 @@ func Serve(servers []*Server) {
 		go func(s *Server) {
 			defer wg.Done()
 			s.ServerNumber = fmt.Sprintf("%d", index)
-			s.Create()
+			s.Run()
 		}(srv)
 	}
 
