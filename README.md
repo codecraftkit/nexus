@@ -36,7 +36,7 @@ func main() {
 		},
 	}
 
-	server.Create()
+	server.Run()
 
 }
 

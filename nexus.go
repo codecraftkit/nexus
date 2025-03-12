@@ -9,8 +9,8 @@ import (
 	"time"
 )
 
-// Create and run new Server
-func (server *Server) Create() {
+// Run a new Server
+func (server *Server) Run() {
 
 	if server.ServerName == "" {
 		if server.ServerNumber == "" {
