@@ -27,6 +27,7 @@ func main() {
 		//Secret:      os.Getenv("SECRET"),
 		Port:        os.Getenv("PORT"),
 		Debug:       true,
+		//SecretMiddleware: func(next http.Handler, server *nexus.Server) http.Handler, // replace the default secret middleware
 		Middlewares: []func(next http.Handler, server *nexus.Server) http.Handler{
 			//VerifySession,
 		},
@@ -112,6 +113,7 @@ func main() {
 		//Secret: os.Getenv("SECRET"),
 		Port:        "8081", //os.Getenv("PORT"),
 		Debug:       true,
+		//SecretMiddleware: func(next http.Handler, server *nexus.Server) http.Handler, // replace the default secret middleware
 		Middlewares: []func(next http.Handler, server *nexus.Server) http.Handler{
 			//VerifySession,
 		},
