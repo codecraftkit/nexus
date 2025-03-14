@@ -35,8 +35,8 @@ func (server *Server) GetEndpoints() map[string]Endpoint {
 	return server.EndpointsPaths
 }
 
-// setEndpoint add a endpoint to the endpoint's map
-func (server *Server) setEndpoint(endpoint Endpoint) {
+// registerEndpoint add a endpoint to the endpoint's map
+func (server *Server) registerEndpoint(endpoint Endpoint) {
 	server.EndpointsPaths[endpoint.Path] = endpoint
 }
 
@@ -51,6 +51,6 @@ func (server *Server) setEndpoints(endpoints []Endpoint) {
 		if server.Debug {
 			fmt.Println(endpoint.Path)
 		}
-		server.setEndpoint(endpoint)
+		server.registerEndpoint(endpoint)
 	}
 }
