@@ -33,8 +33,26 @@ func RoutesList(server *Server) http.HandlerFunc {
 	}
 }
 
+func RawRoutesList(server *Server) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		var routes []Endpoint
+
+		for _, endpoints := range server.Endpoints {
+			for _, endpoint := range endpoints {
+				routes = append(routes, endpoint)
+			}
+		}
+
+		fmt.Println(routes)
+
+		ResponseWithJSON(w, http.StatusOK, routes)
+	}
+}
+
 // ServerEndpoints is the list of endpoints for the server
 var ServerEndpoints = []Endpoint{
-	{Path: "GET /_health", HandlerServerFunc: Health, Options: EndpointOptions{IsPublic: true}},
-	{Path: "GET /_routes", HandlerServerFunc: RoutesList, Options: EndpointOptions{IsPublic: true}},
+	{Path: "GET /_health", HandlerServerFunc: Health, Options: EndpointOptions{IsPublic: true, NoRequiresAuthentication: true}},
+	{Path: "GET /_routes", HandlerServerFunc: RoutesList, Options: EndpointOptions{IsPublic: true, NoRequiresAuthentication: true}},
+	{Path: "GET /_routes/raw", HandlerServerFunc: RawRoutesList, Options: EndpointOptions{IsPublic: true, NoRequiresAuthentication: true}},
 }
