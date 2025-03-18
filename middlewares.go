@@ -18,7 +18,9 @@ func (server *Server) ApplyMiddlewares(mux http.Handler) http.Handler {
 	// If the server has a secret, the server will be register the ValidateSecret middleware that will check if the request has a secret
 	if server.Secret != "" && server.SecretMiddleware == nil {
 		mux = server.ValidateSecret(mux)
-	} else {
+	}
+
+	if server.SecretMiddleware != nil {
 		mux = server.SecretMiddleware(mux, server)
 	}
 
