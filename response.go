@@ -27,13 +27,28 @@ type ResponsePagination struct {
 	Data         interface{} `json:"data"`
 }
 
-type PaginationOptions struct {
-	Page    int64
-	Limit   int64
-	Skip    int64
-	Payload interface{}
-	Path    string
-	Total   int64
+// ResponseWithJSON return a json response
+func ResponseWithJSON(w http.ResponseWriter, code int, payload interface{}) error {
+	response, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+
+	w.WriteHeader(code)
+	w.Write(response)
+	return nil
+}
+
+// ResponseWithError return a json response with an error
+func ResponseWithError(w http.ResponseWriter, code int, msg string) error {
+	errorResponse := &ErrorResponse{
+		Code:     code,
+		Message:  msg,
+		CodeName: "internal_server_error",
+		Errors:   map[string]string{"error": msg},
+	}
+	return ResponseJsonWithError(w, code, errorResponse)
 }
 
 type ErrorResponse struct {
@@ -43,33 +58,30 @@ type ErrorResponse struct {
 	Errors   map[string]string `json:"errors"`
 }
 
-// ResponseWithJSON return a json response
-func ResponseWithJSON(w http.ResponseWriter, code int, payload interface{}) error {
-	response, err := json.Marshal(payload)
-	if err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
-	w.Write(response)
-	return nil
-}
-
-// ResponseWithError return a json response with an error
-func ResponseWithError(w http.ResponseWriter, code int, msg string) error {
-	return ResponseWithJSON(w, code, map[string]string{"error": msg})
-}
-
-func ResponseJsonWithError(w http.ResponseWriter, code int, errors interface{}, errorResponse *ErrorResponse) error {
+func ResponseJsonWithError(w http.ResponseWriter, code int, errorResponse *ErrorResponse) error {
 	if errorResponse == nil {
 		errorResponse = &ErrorResponse{
 			Code:     99999,
 			Message:  "Internal Server Error",
 			CodeName: "internal_server_error",
-			Errors:   errors.(map[string]string),
+			//Errors:   errors.(map[string]string),
 		}
 	}
+
+	if errorResponse.Message == "EOF" {
+		errorResponse.Message = "BODY_REQUIRED"
+	}
+
 	return ResponseWithJSON(w, code, errorResponse)
+}
+
+type PaginationOptions struct {
+	Page    int64
+	Limit   int64
+	Skip    int64
+	Payload interface{}
+	Path    string
+	Total   int64
 }
 
 func ResponseWithPagination(w http.ResponseWriter, code int, payload interface{}) error {
