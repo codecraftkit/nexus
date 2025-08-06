@@ -10,9 +10,9 @@ import (
 // if the server has a secret, the server will be register the ValidateSecret middleware that will check if the request has a secret
 func (server *Server) ApplyMiddlewares(mux http.Handler) http.Handler {
 
-	// If the server is in debug mode, the server will be register the LogRequest middleware that will log the request on the console
-	if server.Debug {
-		mux = server.LogRequest(mux)
+	// Apply all middlewares
+	for i := len(server.Middlewares) - 1; i >= 0; i-- {
+		mux = server.Middlewares[i](mux, server)
 	}
 
 	// If the server has a secret, the server will be register the ValidateSecret middleware that will check if the request has a secret
@@ -24,9 +24,9 @@ func (server *Server) ApplyMiddlewares(mux http.Handler) http.Handler {
 		mux = server.SecretMiddleware(mux, server)
 	}
 
-	// Apply all middlewares
-	for i := len(server.Middlewares) - 1; i >= 0; i-- {
-		mux = server.Middlewares[i](mux, server)
+	// If the server is in debug mode, the server will be register the LogRequest middleware that will log the request on the console
+	if server.Debug {
+		mux = server.LogRequest(mux)
 	}
 
 	return mux
@@ -57,7 +57,7 @@ func (server *Server) ValidateSecret(next http.Handler) http.Handler {
 		// If the secret is empty or not equal to the server's secret, the request is unauthorized (Status 401)
 		// TODO: optimize this check
 		if secret == "" || secret != server.Secret {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			http.Error(w, "Unauthorized: Invalid secret [nexus]", http.StatusUnauthorized)
 			return
 		}
 
