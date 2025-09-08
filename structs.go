@@ -19,6 +19,12 @@ type Server struct {
 	EndpointsPaths       map[string]*Endpoint
 	CorsOptions          cors.Options
 	SecretMiddleware     func(next http.Handler, server *Server) http.Handler // Replace the default secret middleware
+	Settings             *Settings
+}
+
+type Settings struct {
+	IgnoreSecret bool
+	PathPrefix   string
 }
 
 // Endpoint is a struct that contains the endpoint's configuration and handlers

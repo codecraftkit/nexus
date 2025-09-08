@@ -5,6 +5,7 @@ import (
 	"github.com/rs/cors"
 	"log"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 )
@@ -25,11 +26,17 @@ func (server *Server) Run() {
 	server.Endpoints = append(server.Endpoints, ServerEndpoints)
 
 	// Add the endpoints from the user setup
-	for _, endpoints := range server.Endpoints {
+	for i, endpoints := range server.Endpoints {
 
-		server.setEndpoints(endpoints)
+		for j, endpoint := range endpoints {
 
-		for _, endpoint := range endpoints {
+			endpoint.Path = strings.Replace(
+				endpoint.Path,
+				" /",
+				fmt.Sprintf(" %s/", server.Settings.PathPrefix),
+				-1,
+			)
+			server.Endpoints[i][j] = endpoint
 
 			// If an endpoint has both Handler and HandlerFunc the server going to crash
 			if endpoint.HandlerFunc != nil && endpoint.Handler != nil {
@@ -45,6 +52,8 @@ func (server *Server) Run() {
 				mux.Handle(endpoint.Path, endpoint.Handler)
 			}
 		}
+
+		server.setEndpoints(endpoints)
 	}
 
 	port := server.Port
@@ -96,4 +105,37 @@ func Serve(servers []*Server) {
 // SetDebug set debug mode
 func (server *Server) setDebug(debug bool) {
 	server.Debug = debug
+}
+
+func (server *Server) Use(middlewares ...func(next http.Handler, server *Server) http.Handler) {
+	server.Middlewares = append(server.Middlewares, middlewares...)
+}
+
+func (server *Server) Endpoint(path string, handler http.HandlerFunc) {
+	endpoint := Endpoint{
+		Path:        path,
+		HandlerFunc: handler,
+	}
+	server.Endpoints = append(server.Endpoints, []Endpoint{endpoint})
+}
+
+func (server *Server) Group(group string, apiEndpoints []Endpoint) {
+
+	for i, endpoint := range apiEndpoints {
+		paths := strings.Split(endpoint.Path, " ")
+		if len(paths[1]) == 1 {
+			endpoint.Path = fmt.Sprintf("%s %s", paths[0], group)
+		} else {
+			endpoint.Path = strings.Replace(
+				endpoint.Path,
+				" /",
+				fmt.Sprintf(" %s/", group),
+				-1,
+			)
+		}
+		apiEndpoints[i] = endpoint
+	}
+
+	server.Endpoints = append(server.Endpoints, apiEndpoints)
+
 }

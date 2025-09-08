@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"strings"
 )
 
 // EndpointFunc contains the endpoint's functions
@@ -97,4 +98,27 @@ func (server *Server) matchRoute(url string) *Endpoint {
 		}
 	}
 	return nil
+}
+
+func RequestScheme(r *http.Request) string {
+	// 1) Encabezados estándar de proxies/CDN
+	if xf := r.Header.Get("X-Forwarded-Proto"); xf != "" {
+		return xf
+	}
+	// 2) RFC 7239: Forwarded: proto=https; host=...
+	if fwd := r.Header.Get("Forwarded"); fwd != "" {
+		// búsqueda simple
+		parts := strings.Split(fwd, ";")
+		for _, p := range parts {
+			p = strings.TrimSpace(p)
+			if strings.HasPrefix(strings.ToLower(p), "proto=") {
+				return strings.Trim(strings.SplitN(p, "=", 2)[1], `"`)
+			}
+		}
+	}
+	// 3) Conexión TLS local
+	if r.TLS != nil {
+		return "https"
+	}
+	return "http"
 }
