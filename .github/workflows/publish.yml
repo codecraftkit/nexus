@@ -20,3 +20,13 @@ jobs:
         run: |
           echo "Publishing nexus@$TAG"
           GOPROXY=proxy.golang.org go list -m github.com/codecraftkit/nexus@${TAG}
+
+      - name: Discord Notification
+        uses: Ilshidur/action-discord@0.4.0
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        with:
+          args: |
+            🚀 New Release Published: **${{ github.event.release.tag_name }}**
+            Module: ${{ github.repository }}
+            Notes: ${{ github.event.release.body }}

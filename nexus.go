@@ -13,6 +13,7 @@ import (
 // Run a new Server
 func (server *Server) Run() {
 
+	// Server Name
 	if server.ServerName == "" {
 		if server.ServerNumber == "" {
 			server.ServerNumber = "0"
