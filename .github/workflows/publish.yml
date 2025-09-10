@@ -1,0 +1,22 @@
+name: Go Publish on Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish-go-module:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checking Code
+        uses: actions/checkout@v4
+
+      - name: Installing GO
+        uses: actions/setup-go@v5
+
+      - name: Publishing Module in proxy GO
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          echo "Publishing nexus@$TAG"
+          GOPROXY=proxy.golang.org go list -m github.com/codecraftkit/nexus@${TAG}
