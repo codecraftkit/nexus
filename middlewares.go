@@ -37,6 +37,11 @@ func (server *Server) ApplyMiddlewares(mux http.Handler) http.Handler {
 func (server *Server) LogRequest(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("[%s] %s %s\n", server.ServerName, r.Method, r.URL.Path)
+		_, ok := server.GetEndpoint(r)
+		if !ok {
+			http.Error(w, "Endpoint not found", http.StatusNotFound)
+			return
+		}
 		next.ServeHTTP(w, r)
 	})
 }
