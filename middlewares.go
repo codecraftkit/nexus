@@ -16,14 +16,14 @@ func (server *Server) ApplyMiddlewares(mux http.Handler) http.Handler {
 	}
 
 	// If the server has a secret, the server will be register the ValidateSecret middleware that will check if the request has a secret
-	if server.Secret != "" && server.SecretMiddleware == nil && !server.Settings.IgnoreSecret {
-		mux = server.ValidateSecret(mux)
-	}
+	//if server.Secret != "" && server.SecretMiddleware == nil && !server.Settings.IgnoreSecret {
+	//	mux = server.ValidateSecret(mux)
+	//}
 
-	fmt.Println(server.Settings.IgnoreSecret)
-	if server.SecretMiddleware != nil {
-		mux = server.SecretMiddleware(mux, server)
-	}
+	//fmt.Println(server.Settings.IgnoreSecret)
+	//if server.SecretMiddleware != nil {
+	//	mux = server.SecretMiddleware(mux, server)
+	//}
 
 	// If the server is in debug mode, the server will be register the LogRequest middleware that will log the request on the console
 	if server.Debug {
