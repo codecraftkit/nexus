@@ -15,7 +15,7 @@ func (server *Server) EndpointIsPublic(r *http.Request) bool {
 	return ok && endpoint.Options.IsPublic
 }
 
-func (server *Server) EndpointIsPrivate(r *http.Request) bool {
+func (server *Server) NoRequiresAuthentication(r *http.Request) bool {
 	endpoint, ok := server.GetEndpoint(r)
 	return ok && endpoint.Options.NoRequiresAuthentication
 }
