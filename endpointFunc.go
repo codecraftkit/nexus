@@ -11,16 +11,13 @@ import (
 
 // EndpointIsPublic evalue if the endpoint is public
 func (server *Server) EndpointIsPublic(r *http.Request) bool {
-	/**
-	Evaluo si el path el publico para no evaluar secret
-	*/
 	endpoint, ok := server.GetEndpoint(r)
+	return ok && endpoint.Options.IsPublic
+}
 
-	if ok && endpoint.Options.IsPublic {
-		return true
-	}
-
-	return false
+func (server *Server) EndpointIsPrivate(r *http.Request) bool {
+	endpoint, ok := server.GetEndpoint(r)
+	return ok && endpoint.Options.NoRequiresAuthentication
 }
 
 // GetEndpoint evaluate if a path exists in the endpoints and return the endpoint and a bool if exists
