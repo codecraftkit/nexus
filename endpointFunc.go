@@ -15,7 +15,7 @@ func (server *Server) EndpointIsPublic(r *http.Request) bool {
 	return ok && endpoint.Options.IsPublic
 }
 
-func (server *Server) EndpointNoRequiresAuthentication(r *http.Request) bool {
+func (server *Server) EndpointIsPrivate(r *http.Request) bool {
 	endpoint, ok := server.GetEndpoint(r)
 	return ok && endpoint.Options.NoRequiresAuthentication
 }
@@ -27,9 +27,9 @@ func (server *Server) GetEndpoint(r *http.Request) (*Endpoint, bool) {
 	path := fmt.Sprintf("%s %s", method, route)
 	endpoint := server.matchRoute(path)
 	if endpoint != nil {
-		return endpoint, false
+		return endpoint, true
 	}
-	return nil, true
+	return nil, false
 }
 
 // GetEndpoints return all endpoints
