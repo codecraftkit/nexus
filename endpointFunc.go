@@ -27,9 +27,9 @@ func (server *Server) GetEndpoint(r *http.Request) (*Endpoint, bool) {
 	path := fmt.Sprintf("%s %s", method, route)
 	endpoint := server.matchRoute(path)
 	if endpoint != nil {
-		return endpoint, true
+		return endpoint, false
 	}
-	return nil, false
+	return nil, true
 }
 
 // GetEndpoints return all endpoints
