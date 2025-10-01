@@ -52,7 +52,7 @@ func RawRoutesList(server *Server) http.HandlerFunc {
 
 // ServerEndpoints is the list of endpoints for the server
 var ServerEndpoints = []Endpoint{
-	{Path: "GET /_health", HandlerServerFunc: Health, Options: EndpointOptions{IsPublic: true, NoRequiresAuthentication: true}},
-	{Path: "GET /_routes", HandlerServerFunc: RoutesList, Options: EndpointOptions{IsPublic: true, NoRequiresAuthentication: true}},
-	{Path: "GET /_routes/raw", HandlerServerFunc: RawRoutesList, Options: EndpointOptions{IsPublic: true, NoRequiresAuthentication: true}},
+	{Path: "GET /_health", HandlerServerFunc: Health, Options: EndpointOptions{IsPublic: true, NoRequiresAuthentication: true, IgnorePrefix: true}},
+	{Path: "GET /_routes", HandlerServerFunc: RoutesList, Options: EndpointOptions{IsPublic: true, NoRequiresAuthentication: true, IgnorePrefix: true}},
+	{Path: "GET /_routes/raw", HandlerServerFunc: RawRoutesList, Options: EndpointOptions{IsPublic: true, NoRequiresAuthentication: true, IgnorePrefix: true}},
 }

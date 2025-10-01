@@ -41,4 +41,5 @@ type Endpoint struct {
 type EndpointOptions struct {
 	IsPublic                 bool
 	NoRequiresAuthentication bool
+	IgnorePrefix             bool
 }

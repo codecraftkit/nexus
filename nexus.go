@@ -28,15 +28,16 @@ func (server *Server) Run() {
 
 	// Add the endpoints from the user setup
 	for i, endpoints := range server.Endpoints {
-
 		for j, endpoint := range endpoints {
 
-			endpoint.Path = strings.Replace(
-				endpoint.Path,
-				" /",
-				fmt.Sprintf(" %s/", server.Settings.PathPrefix),
-				-1,
-			)
+			if !endpoint.Options.IgnorePrefix {
+				endpoint.Path = strings.Replace(
+					endpoint.Path,
+					" /",
+					fmt.Sprintf(" %s/", server.Settings.PathPrefix),
+					-1,
+				)
+			}
 			server.Endpoints[i][j] = endpoint
 
 			// If an endpoint has both Handler and HandlerFunc the server going to crash
