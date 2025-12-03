@@ -141,3 +141,35 @@ func (server *Server) Group(group string, apiEndpoints []Endpoint) {
 	server.Endpoints = append(server.Endpoints, apiEndpoints)
 
 }
+
+func (server *Server) GroupWithOptions(group string, apiEndpoints []Endpoint, groupOptions *GroupOptions) {
+
+	for i, endpoint := range apiEndpoints {
+		paths := strings.Split(endpoint.Path, " ")
+		if len(paths[1]) == 1 {
+			endpoint.Path = fmt.Sprintf("%s %s", paths[0], group)
+		} else {
+			endpoint.Path = strings.Replace(
+				endpoint.Path,
+				" /",
+				fmt.Sprintf(" %s/", group),
+				-1,
+			)
+		}
+
+		if groupOptions != nil {
+			middlewares := groupOptions.Middlewares
+
+			if len(middlewares) > 0 {
+				for _, middleware := range middlewares {
+					endpoint.Handler = middleware(http.Handler(endpoint.HandlerFunc))
+				}
+			}
+		}
+
+		apiEndpoints[i] = endpoint
+	}
+
+	server.Endpoints = append(server.Endpoints, apiEndpoints)
+
+}

@@ -43,3 +43,7 @@ type EndpointOptions struct {
 	NoRequiresAuthentication bool
 	IgnorePrefix             bool
 }
+
+type GroupOptions struct {
+	Middlewares []func(next http.Handler) http.Handler
+}
