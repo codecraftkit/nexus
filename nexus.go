@@ -163,6 +163,7 @@ func (server *Server) GroupWithOptions(group string, apiEndpoints []Endpoint, gr
 			if len(middlewares) > 0 {
 				for _, middleware := range middlewares {
 					endpoint.Handler = middleware(http.Handler(endpoint.HandlerFunc))
+					endpoint.HandlerFunc = nil
 				}
 			}
 		}
