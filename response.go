@@ -63,6 +63,9 @@ type ErrorResponse struct {
 }
 
 func ResponseJsonWithError(w http.ResponseWriter, code int, errorResponse *ErrorResponse) error {
+	if code == 0 {
+		code = http.StatusInternalServerError
+	}
 	if errorResponse == nil {
 		errorResponse = &ErrorResponse{
 			Code:     99999,
