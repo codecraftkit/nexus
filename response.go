@@ -46,6 +46,9 @@ func ResponseWithJSON(w http.ResponseWriter, code int, payload interface{}) erro
 
 // ResponseWithError return a json response with an error
 func ResponseWithError(w http.ResponseWriter, code int, msg string) error {
+	if code == 0 {
+		code = http.StatusInternalServerError
+	}
 	errorResponse := &ErrorResponse{
 		Code:     code,
 		Message:  msg,
