@@ -1,9 +1,10 @@
 package nexus
 
 import (
-	"github.com/rs/cors"
 	"net/http"
 	"regexp"
+
+	"github.com/rs/cors"
 )
 
 // Server is a struct that contains the server's configuration and endpoints
@@ -18,8 +19,7 @@ type Server struct {
 	Endpoints            [][]Endpoint
 	EndpointsPaths       map[string]*Endpoint
 	CorsOptions          cors.Options
-	//SecretMiddleware     func(next http.Handler, server *Server) http.Handler // Replace the default secret middleware
-	Settings *Settings
+	Settings             *Settings
 }
 
 type Settings struct {

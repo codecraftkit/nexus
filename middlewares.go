@@ -36,7 +36,7 @@ func (server *Server) ApplyMiddlewares(mux http.Handler) http.Handler {
 // LogRequest log the request on the console
 func (server *Server) LogRequest(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if server.Debug {
+		if server.Debug && r.URL.Path != "/_health" {
 			fmt.Printf("[%s] %s %s\n", server.ServerName, r.Method, r.URL.Path)
 		}
 		_, ok := server.GetEndpoint(r)
