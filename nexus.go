@@ -13,6 +13,10 @@ import (
 // Run a new Server
 func (server *Server) Run() {
 
+	if server.Settings == nil {
+		server.Settings = &Settings{}
+	}
+
 	// Server Name
 	if server.ServerName == "" {
 		if server.ServerNumber == "" {
@@ -80,7 +84,7 @@ func (server *Server) Run() {
 		server.RunningServerMessage = fmt.Sprintf("[%s] Server running on port %s\n", server.ServerName, httpServer.Addr)
 	}
 
-	fmt.Printf(server.RunningServerMessage)
+	fmt.Print(server.RunningServerMessage)
 	if err := httpServer.ListenAndServe(); err != nil {
 		log.Fatal(err)
 	}
@@ -161,10 +165,12 @@ func (server *Server) GroupWithOptions(group string, apiEndpoints []Endpoint, gr
 			middlewares := groupOptions.Middlewares
 
 			if len(middlewares) > 0 {
+				var handler http.Handler = endpoint.HandlerFunc
 				for _, middleware := range middlewares {
-					endpoint.Handler = middleware(http.Handler(endpoint.HandlerFunc))
-					endpoint.HandlerFunc = nil
+					handler = middleware(handler)
 				}
+				endpoint.Handler = handler
+				endpoint.HandlerFunc = nil
 			}
 		}
 

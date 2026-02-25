@@ -88,10 +88,9 @@ func pathMatches(compiledRegex *regexp.Regexp, url string) bool {
 }
 
 func (server *Server) matchRoute(url string) *Endpoint {
-	for endpoint := range server.EndpointsPaths {
-		compiledRegex := convertToRegex(endpoint)
-		if pathMatches(compiledRegex, url) {
-			return server.EndpointsPaths[endpoint]
+	for _, ep := range server.EndpointsPaths {
+		if ep.RegexPattern != nil && ep.RegexPattern.MatchString(url) {
+			return ep
 		}
 	}
 	return nil
