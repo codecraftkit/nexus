@@ -2,12 +2,13 @@ package nexus
 
 import (
 	"fmt"
-	"github.com/rs/cors"
 	"log"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/rs/cors"
 )
 
 // Run a new Server
@@ -166,8 +167,8 @@ func (server *Server) GroupWithOptions(group string, apiEndpoints []Endpoint, gr
 
 			if len(middlewares) > 0 {
 				var handler http.Handler = endpoint.HandlerFunc
-				for _, middleware := range middlewares {
-					handler = middleware(handler)
+				for i := len(middlewares) - 1; i >= 0; i-- {
+					handler = middlewares[i](handler)
 				}
 				endpoint.Handler = handler
 				endpoint.HandlerFunc = nil
