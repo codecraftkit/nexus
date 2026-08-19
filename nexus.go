@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/rs/cors"
 )
@@ -70,16 +69,11 @@ func (server *Server) Run() {
 
 	c := cors.New(server.CorsOptions)
 
-	httpServer := &http.Server{
-		Addr: fmt.Sprintf(":%s", port),
-		Handler: c.Handler(
-			server.ApplyMiddlewares(
-				mux,
-			),
+	httpServer := server.buildHTTPServer(port, c.Handler(
+		server.ApplyMiddlewares(
+			mux,
 		),
-		WriteTimeout: 15 * time.Second,
-		ReadTimeout:  15 * time.Second,
-	}
+	))
 
 	if server.RunningServerMessage == "" {
 		server.RunningServerMessage = fmt.Sprintf("[%s] Server running on port %s\n", server.ServerName, httpServer.Addr)
@@ -180,4 +174,19 @@ func (server *Server) GroupWithOptions(group string, apiEndpoints []Endpoint, gr
 
 	server.Endpoints = append(server.Endpoints, apiEndpoints)
 
+}
+
+// buildHTTPServer assembles the *http.Server that Run() listens with.
+//
+// Split out so the wiring can be asserted. Run() ends in ListenAndServe and
+// log.Fatal, so anything decided inline there is only reachable by starting a
+// real server on a real port — which is how the timeouts stayed hardcoded
+// without a test noticing.
+func (server *Server) buildHTTPServer(port string, handler http.Handler) *http.Server {
+	return &http.Server{
+		Addr:         fmt.Sprintf(":%s", port),
+		Handler:      handler,
+		WriteTimeout: server.Settings.writeTimeout(),
+		ReadTimeout:  server.Settings.readTimeout(),
+	}
 }

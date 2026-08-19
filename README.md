@@ -266,9 +266,39 @@ server := &nexus.Server{
 	Settings: &nexus.Settings{
 		PathPrefix:   "/api/v1", // Prepended to all endpoint paths
 		IgnoreSecret: true,      // Disable secret validation
+
+		// Server timeouts. Zero keeps the defaults below, so leaving them out
+		// behaves exactly as before they were configurable.
+		WriteTimeout: 30 * time.Second, // default: 15s
+		ReadTimeout:  30 * time.Second, // default: 15s
 	},
 }
 ```
+
+#### Streaming: do not disable the timeout server-wide
+
+Zero means *"keep the default"*, not *"no timeout"* — on purpose. Turning the
+write timeout off for the whole server so that one endpoint can stream lets a
+single stuck client hold a connection forever, and removes the protection from
+every other route to fix one.
+
+For SSE, chunked downloads or any long-lived response, clear the deadline on
+**that connection** instead. It is in the standard library:
+
+```go
+func streamHandler(w http.ResponseWriter, r *http.Request) {
+	// Clears the write deadline for THIS connection only. The server default
+	// keeps protecting every other route.
+	if err := http.NewResponseController(w).SetWriteDeadline(time.Time{}); err != nil {
+		http.Error(w, "streaming unsupported", http.StatusInternalServerError)
+		return
+	}
+	// ... write events, Flush after each one
+}
+```
+
+The `Settings` fields are for when the **whole service** needs a different
+number — a gateway proxying slow upstreams, a service whose every route uploads.
 
 ## Endpoints
 

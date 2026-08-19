@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
+	"time"
 )
 
 // --- Use ---
@@ -308,5 +309,109 @@ func TestServerNameWithNumber(t *testing.T) {
 
 	if server.ServerName != "Server 3" {
 		t.Fatalf("expected 'Server 3', got %s", server.ServerName)
+	}
+}
+
+// --- Timeouts ---
+
+// TestTimeoutDefaults pins that upgrading changes nothing on its own.
+//
+// These were hardcoded at 15s inside Run(). A server that never mentions them
+// has to keep getting exactly that, or making them configurable becomes a
+// silent behaviour change for every consumer that did not ask for one.
+func TestTimeoutDefaults(t *testing.T) {
+	settings := &Settings{}
+
+	if got := settings.writeTimeout(); got != DefaultWriteTimeout {
+		t.Errorf("writeTimeout() = %s, want the default %s", got, DefaultWriteTimeout)
+	}
+	if got := settings.readTimeout(); got != DefaultReadTimeout {
+		t.Errorf("readTimeout() = %s, want the default %s", got, DefaultReadTimeout)
+	}
+
+	if DefaultWriteTimeout != 15*time.Second || DefaultReadTimeout != 15*time.Second {
+		t.Errorf("defaults are %s/%s, want 15s/15s — the values Run() hardcoded before this change",
+			DefaultWriteTimeout, DefaultReadTimeout)
+	}
+}
+
+// TestTimeoutNilSettings covers Run()'s own path: Settings may be nil, and it
+// initialises it before use. Resolving a timeout must not panic if that order
+// ever changes.
+func TestTimeoutNilSettings(t *testing.T) {
+	var settings *Settings
+
+	if got := settings.writeTimeout(); got != DefaultWriteTimeout {
+		t.Errorf("writeTimeout() on nil Settings = %s, want the default", got)
+	}
+	if got := settings.readTimeout(); got != DefaultReadTimeout {
+		t.Errorf("readTimeout() on nil Settings = %s, want the default", got)
+	}
+}
+
+func TestTimeoutOverrides(t *testing.T) {
+	settings := &Settings{
+		WriteTimeout: 5 * time.Minute,
+		ReadTimeout:  90 * time.Second,
+	}
+
+	if got := settings.writeTimeout(); got != 5*time.Minute {
+		t.Errorf("writeTimeout() = %s, want 5m", got)
+	}
+	if got := settings.readTimeout(); got != 90*time.Second {
+		t.Errorf("readTimeout() = %s, want 90s", got)
+	}
+}
+
+// TestTimeoutsAreIndependent guards the copy-paste this pair invites: two
+// fields, two accessors, four lines that look alike. Reading one where the
+// other belongs gives a server whose writes die on the read budget — and it
+// only shows up on the slow request nobody makes locally.
+func TestTimeoutsAreIndependent(t *testing.T) {
+	settings := &Settings{WriteTimeout: time.Hour}
+
+	if got := settings.writeTimeout(); got != time.Hour {
+		t.Errorf("writeTimeout() = %s, want 1h", got)
+	}
+	if got := settings.readTimeout(); got != DefaultReadTimeout {
+		t.Errorf("readTimeout() = %s, want the default — setting one must not move the other", got)
+	}
+}
+
+// TestBuildHTTPServerAppliesTimeouts is the test that was missing: it asserts
+// the configured values actually reach the *http.Server.
+//
+// Without it, reverting the two lines in Run() back to hardcoded 15s passes the
+// whole suite — every other timeout test checks the resolver in isolation and
+// never that anybody calls it.
+func TestBuildHTTPServerAppliesTimeouts(t *testing.T) {
+	server := &Server{Settings: &Settings{
+		WriteTimeout: 5 * time.Minute,
+		ReadTimeout:  90 * time.Second,
+	}}
+
+	httpServer := server.buildHTTPServer("8080", http.NewServeMux())
+
+	if httpServer.WriteTimeout != 5*time.Minute {
+		t.Errorf("WriteTimeout = %s, want 5m — the setting never reached the server", httpServer.WriteTimeout)
+	}
+	if httpServer.ReadTimeout != 90*time.Second {
+		t.Errorf("ReadTimeout = %s, want 90s — the setting never reached the server", httpServer.ReadTimeout)
+	}
+	if httpServer.Addr != ":8080" {
+		t.Errorf("Addr = %q, want :8080", httpServer.Addr)
+	}
+}
+
+// TestBuildHTTPServerDefaults is the same assertion for the server that
+// configures nothing — the case every existing consumer is in.
+func TestBuildHTTPServerDefaults(t *testing.T) {
+	server := &Server{Settings: &Settings{}}
+
+	httpServer := server.buildHTTPServer("8080", http.NewServeMux())
+
+	if httpServer.WriteTimeout != DefaultWriteTimeout || httpServer.ReadTimeout != DefaultReadTimeout {
+		t.Errorf("timeouts = %s/%s, want the defaults %s/%s",
+			httpServer.WriteTimeout, httpServer.ReadTimeout, DefaultWriteTimeout, DefaultReadTimeout)
 	}
 }
