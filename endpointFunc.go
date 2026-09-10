@@ -45,6 +45,79 @@ func (server *Server) registerEndpoint(endpoint Endpoint) {
 	server.EndpointsPaths[endpoint.Path] = &endpoint
 }
 
+// PrepareEndpoints applies the path prefix, registers every endpoint on a mux
+// and fills the route index that EndpointIsPublic and NoRequiresAuthentication
+// read. It returns that mux. Run calls it and then serves the result.
+//
+// It is exported so a caller can build the SAME wiring without listening.
+// Until now the index was filled only inside Run, and that had a consequence
+// worth spelling out: a test that assembled its own mux saw an EMPTY index, so
+// matchRoute returned nil and every endpoint looked non-public. An assertion
+// like "this group requires the API secret" then passed for a reason that had
+// nothing to do with the group — it would have passed just the same with the
+// group marked public. That is a green result that does not mean what it looks
+// like, and the only way to avoid it without duplicating this route matching
+// somewhere else is to let callers run this exact code.
+//
+// It is idempotent: calling it twice neither prefixes the paths twice nor adds
+// the library endpoints twice.
+func (server *Server) PrepareEndpoints() *http.ServeMux {
+
+	if server.Settings == nil {
+		server.Settings = &Settings{}
+	}
+
+	mux := http.NewServeMux()
+
+	if !server.endpointsPrepared {
+		// A COPY of the library endpoints, not the package-level slice itself.
+		//
+		// Today every entry in ServerEndpoints sets IgnorePrefix, so the
+		// prefixing below never rewrites them and sharing the backing array
+		// happens to be harmless. This copy is what keeps it harmless: Serve
+		// runs several servers at once, each with its own PathPrefix, so a
+		// library endpoint added WITHOUT IgnorePrefix would have one server's
+		// prefix land on every other server's routes. Cheap here, and silent if
+		// it ever happened.
+		server.Endpoints = append(server.Endpoints, append([]Endpoint(nil), ServerEndpoints...))
+	}
+
+	for i, endpoints := range server.Endpoints {
+		for j, endpoint := range endpoints {
+
+			if !server.endpointsPrepared && !endpoint.Options.IgnorePrefix {
+				endpoint.Path = strings.Replace(
+					endpoint.Path,
+					" /",
+					fmt.Sprintf(" %s/", server.Settings.PathPrefix),
+					-1,
+				)
+			}
+			server.Endpoints[i][j] = endpoint
+
+			// If an endpoint has both Handler and HandlerFunc the server going to crash
+			if endpoint.HandlerFunc != nil && endpoint.Handler != nil {
+				panic("Endpoint cannot have both HandlerFunc and Handler")
+			}
+			if endpoint.HandlerServerFunc != nil {
+				mux.HandleFunc(endpoint.Path, endpoint.HandlerServerFunc(server))
+			}
+			if endpoint.HandlerFunc != nil {
+				mux.HandleFunc(endpoint.Path, endpoint.HandlerFunc)
+			}
+			if endpoint.Handler != nil {
+				mux.Handle(endpoint.Path, endpoint.Handler)
+			}
+		}
+
+		server.setEndpoints(endpoints)
+	}
+
+	server.endpointsPrepared = true
+
+	return mux
+}
+
 // setEndpoints add a list of endpoints to the endpoint's map
 func (server *Server) setEndpoints(endpoints []Endpoint) {
 
