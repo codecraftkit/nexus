@@ -25,42 +25,7 @@ func (server *Server) Run() {
 		server.ServerName = fmt.Sprintf("Server %s", server.ServerNumber)
 	}
 
-	mux := http.NewServeMux()
-
-	// Add the basic endpoints from the library
-	server.Endpoints = append(server.Endpoints, ServerEndpoints)
-
-	// Add the endpoints from the user setup
-	for i, endpoints := range server.Endpoints {
-		for j, endpoint := range endpoints {
-
-			if !endpoint.Options.IgnorePrefix {
-				endpoint.Path = strings.Replace(
-					endpoint.Path,
-					" /",
-					fmt.Sprintf(" %s/", server.Settings.PathPrefix),
-					-1,
-				)
-			}
-			server.Endpoints[i][j] = endpoint
-
-			// If an endpoint has both Handler and HandlerFunc the server going to crash
-			if endpoint.HandlerFunc != nil && endpoint.Handler != nil {
-				panic("Endpoint cannot have both HandlerFunc and Handler")
-			}
-			if endpoint.HandlerServerFunc != nil {
-				mux.HandleFunc(endpoint.Path, endpoint.HandlerServerFunc(server))
-			}
-			if endpoint.HandlerFunc != nil {
-				mux.HandleFunc(endpoint.Path, endpoint.HandlerFunc)
-			}
-			if endpoint.Handler != nil {
-				mux.Handle(endpoint.Path, endpoint.Handler)
-			}
-		}
-
-		server.setEndpoints(endpoints)
-	}
+	mux := server.PrepareEndpoints()
 
 	port := server.Port
 	if port == "" {

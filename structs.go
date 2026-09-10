@@ -19,8 +19,12 @@ type Server struct {
 	Middlewares          []func(next http.Handler, server *Server) http.Handler
 	Endpoints            [][]Endpoint
 	EndpointsPaths       map[string]*Endpoint
-	CorsOptions          cors.Options
-	Settings             *Settings
+	// endpointsPrepared guards PrepareEndpoints against running its one-time
+	// work twice: prefixing an already prefixed path yields /api/v1/api/v1/...,
+	// and appending the library endpoints again duplicates every route.
+	endpointsPrepared bool
+	CorsOptions       cors.Options
+	Settings          *Settings
 }
 
 type Settings struct {
